@@ -1,36 +1,50 @@
 #!/usr/bin/env python3
-"""Make the AI Judge Laugh: Developer Excuses.
+"""One-line developer excuse for the AI-judge-laugh competition.
 
-Writes one funny single-line excuse a developer gives when code breaks
-in production to /output/entry.txt.
+The joke: the dashboard never went red during the incident, because
+the metric the alert is wired to died at the same time as the exporter
+producing it. Green here means "no data", not "healthy" -- the classic
+observability blind spot, told in first person in a single sentence.
 
-The line: our alerting looked healthy the whole incident, because the
-metric the alert watches died together with the exporter that emits it
--- the classic observability trap where a green dashboard means "no
-signal", not "no problem". It is spoken in first person, uses correct
-jargon (dashboard, metric, alert, exporter), lands in one sentence, and
-turns on a twist a developer recognises instantly.
-
-Deterministic: no randomness, no network, no clock, no environment
-input. The same bytes are written on every run.
+The program is fully deterministic: standard library only, no network,
+no randomness, no clock reads, no environment input. Every run writes
+exactly the same bytes to /output/entry.txt.
 """
 
-import os
+from pathlib import Path
 
-ENTRY = (
-    "The dashboard stayed green the whole time \u2014 "
-    "the metric we alert on died with the exporter, "
-    "so we've been flying blind for six hours."
+# The excuse, held as its three clauses so the setup, the twist and
+# the punchline each stay readable on their own line.
+CLAUSES = (
+    "The dashboard stayed green the whole time \u2014 ",
+    "the metric we alert on died with the exporter, ",
+    "so we've been flying blind for six hours.",
 )
+
+OUTPUT_PATH = Path("/output/entry.txt")
+
+
+def build_entry() -> str:
+    """Join the clauses into the single-line entry text."""
+    return "".join(CLAUSES)
+
+
+def check_entry(text: str) -> None:
+    """Guard the competition limits: 1-200 chars, non-blank, one line."""
+    if not 1 <= len(text) <= 200:
+        raise ValueError(f"entry length {len(text)} out of range 1-200")
+    if not text.strip():
+        raise ValueError("entry must not be blank")
+    if "\n" in text or "\r" in text:
+        raise ValueError("entry must be a single line")
 
 
 def main() -> None:
-    text = ENTRY
-    assert 1 <= len(text) <= 200, f"entry length {len(text)} out of range"
-    assert text.strip(), "entry must not be whitespace-only"
-    os.makedirs("/output", exist_ok=True)
-    with open("/output/entry.txt", "w", encoding="utf-8", newline="\n") as f:
-        f.write(text)
+    text = build_entry()
+    check_entry(text)
+    OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with OUTPUT_PATH.open("w", encoding="utf-8", newline="\n") as handle:
+        handle.write(text)
 
 
 if __name__ == "__main__":
